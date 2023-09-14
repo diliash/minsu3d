@@ -12,5 +12,5 @@ augmentation:
   jitter_xyz: True
   flip: True
   rotation: True
-  elastic: True
+  elastic: False
   jitter_rgb: True
