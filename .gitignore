@@ -4,6 +4,7 @@ data/*/val
 data/*/test
 data/*/scans
 data/*/dataset
+visualize/*/output_ply
 
 # log
 log/
