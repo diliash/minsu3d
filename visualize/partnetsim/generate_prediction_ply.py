@@ -9,6 +9,7 @@ import trimesh
 import tempfile
 import pyglet as gl
 import open3d as o3d
+import json
 
 sys.path.append('../../..')
 
@@ -28,19 +29,36 @@ import io
 from PIL import Image
 
 
+
 PARTNETSIM_COLOR_MAP = {
-    0: (0, 0, 0),
-    1: (174, 199, 232),
-    2: (152, 223, 138),
-    3: (31, 119, 180),
+    0: (214.0, 39.0, 40.0),
+    1: (44.0, 160.0, 44.0),
+    2: (31.0, 119.0, 180.0),
+    3: (227.0, 119.0, 194.0),
 }
 
 PARTNETSIM_COLOR_MAP_REVERSE = {
-    (0.0, 0.0, 0.0): 0,
-    (174, 199, 232): 1, 
-    (152, 223, 138): 2,
-    (31, 119, 180): 3,
+    (214.0, 39.0, 40.0): 0,
+    (44.0, 160.0, 44.0): 1, 
+    (31.0, 119.0, 180.0): 2,
+    (227.0, 119.0, 194.0): 3,
 }
+
+
+
+"""PARTNETSIM_COLOR_MAP = {
+    0: (255, 0, 0),
+    1: (0, 255, 0),
+    2: (0, 0, 255),
+    3: (255, 0, 255),
+}
+
+PARTNETSIM_COLOR_MAP_REVERSE = {
+    (255, 0, 0): 0,
+    (0, 255, 0): 1, 
+    (0, 0, 255): 2,
+    (255, 0, 255): 3,
+}"""
 
 def get_random_color():
     r = random.randint(0, 255)
@@ -57,6 +75,7 @@ def get_random_rgb_colors(num):
 def generate_colored_ply(args, predicted_mask_list, labelIndexes, points, colors, triangles, cur_geometry_map, 
                          rgb_inst_ply):
     print(args.mode)
+    non_base_counter = 0
     if args.mode == "semantic":
         for index, predicted_mask in enumerate(predicted_mask_list):
             semanticIndex = labelIndexes[index]
@@ -64,6 +83,8 @@ def generate_colored_ply(args, predicted_mask_list, labelIndexes, points, colors
             for vertexIndex, color in enumerate(colors):
                 if predicted_mask[vertexIndex] == True:
                     colors[vertexIndex] = PARTNETSIM_COLOR_MAP[int(semanticIndex)]
+                    if semanticIndex != 3:
+                        non_base_counter += 1
     elif args.mode == "instance":
         color_list = get_random_rgb_colors(len(labelIndexes))
         random.shuffle(color_list)
@@ -73,46 +94,57 @@ def generate_colored_ply(args, predicted_mask_list, labelIndexes, points, colors
                     colors[vertexIndex] = color_list[index]
     #write_ply_rgb_face(points, colors, indices, rgb_inst_ply)
 
+    #print("Non base points: ", non_base_counter)
     
-    urdf, controller = getURDF(os.path.join(args.scans, args.scene_id, "mobility.urdf"))
-    mesh = urdf.getMesh()
+    #urdf, controller = getURDF(os.path.join(args.scans, args.scene_id, "mobility.urdf"))
+    #mesh = urdf.getMesh()
+    with open("../../../scripts/data/data.json") as f:
+        data = json.load(f)
 
-    print(np.unique(triangles).shape)
+    specified_parts = {}
+    specified_parts.update(data["val"])
+    specified_parts = specified_parts[args.scene_id]["parts"]
+
+    parser = PartnetsimParser(f"{args.scans}/{args.scene_id}", specified_parts=specified_parts)
+    gt_parts = parser.get_parts_catbox(merge_base=True)
+
+    #print(np.unique(triangles).shape)
     colors = colors.astype(int)
 
-    face_colors = np.empty((1, 3))
+    #print(np.unique(colors, axis=0))
+
+    mesh_list = []
     
+    for part_name, catbox in gt_parts.items():
+        mesh = catbox.colored_mesh
+        for key, geometry in mesh.geometry.items():
+            face_colors = np.empty((1, 3))    
+            geometry_triangles = triangles[cur_geometry_map == f"{part_name}{key}"]
+            geometry_colors = colors[cur_geometry_map == f"{part_name}{key}"]
+            for triangle in np.unique(geometry_triangles):
+                relevant_indexes = np.where(geometry_triangles == triangle)[0]
+                relevant_colors = geometry_colors[relevant_indexes] 
+                relevant_labels = [PARTNETSIM_COLOR_MAP_REVERSE[tuple(color)] for color in relevant_colors]
+                face_colors = np.append(face_colors, np.expand_dims(np.asarray(PARTNETSIM_COLOR_MAP[np.bincount(relevant_labels).argmax()]), axis=0), axis=0)
+            new_visual = np.array([[255,255,255]] * np.shape(geometry.faces)[0])
+            face_colors = np.delete(face_colors, 0, 0)
+            #new_visual[np.unique(geometry_triangles)] = [get_random_color() for _ in range(np.shape(np.unique(geometry_triangles))[0])]
+            new_visual[np.unique(geometry_triangles)] = face_colors
+            geometry.visual = trimesh.visual.color.ColorVisuals(mesh=geometry, face_colors=new_visual)
+
+            #geometry.show()
+            mesh_list.append(geometry)
     
-    for key, geometry in mesh.geometry.items():
-        print(geometry)
-        print(geometry.visual)
-        print(geometry.visual.defined)
-        geometry.visual = geometry.visual.to_color()
-        print(geometry.visual)
-        print(geometry.visual.kind)
-        print(geometry.visual.defined)
-        
-        exit()
-        geometry_triangles = triangles[cur_geometry_map == key]
-        for triangle in np.unique(geometry_triangles):
-            relevant_indexes = np.where(geometry_triangles == triangle)[0]
-            relevant_colors = colors[relevant_indexes] 
-            relevant_labels = [PARTNETSIM_COLOR_MAP_REVERSE[tuple(color)] for color in relevant_colors]
-            face_colors = np.append(face_colors, np.expand_dims(np.asarray(PARTNETSIM_COLOR_MAP[np.bincount(relevant_labels).argmax()]), axis=0), axis=0)
+
+    final_trimesh = trimesh.util.concatenate(mesh_list)
+
+    final_trimesh.show()
+
     
-    face_colors = np.delete(face_colors, 0, 0)
+    #meshes = parser.get_catbox_mesh(triangleMesh=True)
+    #meshes = parser.get_model_mesh()
     
-    all_geometry = np.array([], dtype=int)
-    for key, geometry in mesh.geometry.items():
-        print(geometry.faces)
-        all_geometry = np.append(all_geometry, geometry.faces)
-    print(np.unique(all_geometry))
-    print(np.shape(face_colors))
-    print(np.shape(mesh.triangles))
-    print(mesh.triangles_node)
-    print(np.shape(mesh.triangles_node))
-    
-    
+    #o3d.visualization.draw_geometries(meshes)
     
     return 0
 
@@ -127,7 +159,7 @@ def generate_single_ply(args):
     # define where to output the ply file
     rgb_inst_ply = os.path.join(args.output_dir, f'{args.scene_id}.ply')
 
-    downsample_data = h5py.File("../../../data/dataset_color_normal_triangles/downsample.h5", "a")
+    downsample_data = h5py.File("../../../data/dataset_color_normal_triangles_corrected/downsample.h5", "a")
 
     points = downsample_data["points"]
     instance_ids = downsample_data["instance_ids"]
