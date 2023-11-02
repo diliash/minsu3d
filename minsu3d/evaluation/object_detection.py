@@ -82,10 +82,16 @@ def eval_det_cls(pred, gt, ovthresh=0.25, use_07_metric=False, get_iou_func=get_
     # construct gt objects
     class_recs = {}  # {img_id: {'sphere': sphere list, 'det': matched list}}
     npos = 0
+    #print()
+    #print(pred)
+    #print(gt)
     for img_id in gt.keys():
         sphere = np.array(gt[img_id], dtype=np.float32)
+        #print()
+        #print(sphere, len(sphere))
         det = np.zeros(shape=len(sphere), dtype=bool)
         npos += len(sphere)
+        print(img_id, npos)
         class_recs[img_id] = {'sphere': sphere, 'det': det}
     # pad empty list to all other imgids
     for img_id in pred.keys():

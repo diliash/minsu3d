@@ -92,13 +92,13 @@ def visualize_pc(model_id, prediction_path, points, colors, normals, gtsemantic_
 
     p = multiprocessing.Process(name='gt_window', target=visualize_window, args=(pcd_gt, 0, ))
     p2 = multiprocessing.Process(name='pred_window', target=visualize_window, args=(pcd, 1, ))
-    if mesh_flag:
-        p3 = multiprocessing.Process(name='gt_mesh_visualization', target=gt_mesh_subprocess, args=(model_id,))
+    #if mesh_flag:
+    #    p3 = multiprocessing.Process(name='gt_mesh_visualization', target=gt_mesh_subprocess, args=(model_id,))
 
     p.start()
     p2.start()
-    if mesh_flag:
-        p3.start()
+    #if mesh_flag:
+    #    p3.start()
 
 
     
@@ -106,13 +106,13 @@ def visualize_pc(model_id, prediction_path, points, colors, normals, gtsemantic_
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('-i', '--input_path', type=str, default='./output/PartNetSim/PointGroup/poingroup_partnetsim_elastic_off/inference/val/predictions/instance', 
+    parser.add_argument('-i', '--input_path', type=str, default='./output/PartNetSim/PointGroup/testing-old/inference/val/predictions/instance', 
                         help='specify path to predictions')
     
     parser.add_argument('-s', '--scene_id', type=str, default=None, 
                         help='specify model id from val set')
     
-    parser.add_argument('-d', '--dataset', type=str, default='../data/dataset_color_normal', 
+    parser.add_argument('-d', '--dataset', type=str, default='../data/dataset_color_normal_triangles_corrected', 
                         help='specify path to dataset')
     
     parser.add_argument('-m', '--mesh', type=bool, default=True, 

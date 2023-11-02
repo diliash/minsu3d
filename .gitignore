@@ -5,6 +5,7 @@ data/*/test
 data/*/scans
 data/*/dataset
 visualize/*/output_ply
+visualize/partnetsim/pred*
 
 # log
 log/

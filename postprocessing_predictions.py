@@ -7,7 +7,7 @@ import tqdm
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('-p', '--predict_dir', type=str, default='./output/PartNetSim/PointGroup/zero_threshold_eo/inference/val/predictions/instance', help='the directory of the predictions')
+    parser.add_argument('-p', '--predict_dir', type=str, default='./output/PartNetSim/PointGroup/opmotionWpointnext/inference/val/predictions/instance', help='the directory of the predictions')
     
     args = parser.parse_args()
 
