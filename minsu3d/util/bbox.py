@@ -4,14 +4,15 @@ Reference: https://github.com/facebookresearch/votenet/blob/master/utils/box_uti
 """
 
 from __future__ import print_function
+
 import math
+
 import numpy as np
-from scipy.spatial import ConvexHull
+import trimesh
 from minsu3d.util.pc import write_ply_rgb_face
 from minsu3d.util.transform import roty, roty_batch, rotz
-import trimesh
+from scipy.spatial import ConvexHull
 
- 
 ##################################
 # Convert from box parameters to #
 ##################################

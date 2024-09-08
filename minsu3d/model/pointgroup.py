@@ -1,12 +1,15 @@
 import numpy as np
 import torch.nn as nn
+from minsu3d.common_ops.functions import common_ops, pointgroup_ops
 from minsu3d.evaluation.instance_segmentation import get_gt_instances, rle_encode
 from minsu3d.evaluation.object_detection import get_gt_bbox
-from minsu3d.common_ops.functions import pointgroup_ops, common_ops
-from minsu3d.model.general_model import get_segmented_scores
-from minsu3d.model.module import TinyUnet
 from minsu3d.evaluation.semantic_segmentation import *
-from minsu3d.model.general_model import GeneralModel, clusters_voxelization
+from minsu3d.model.general_model import (
+    GeneralModel,
+    clusters_voxelization,
+    get_segmented_scores,
+)
+from minsu3d.model.module import TinyUnet
 
 
 class PointGroup(GeneralModel):

@@ -1,8 +1,10 @@
 import os
+
+import numpy as np
 import torch
-from tqdm import tqdm
-from minsu3d.evaluation.semantic_segmentation import *
 from minsu3d.evaluation.instance_segmentation import rle_decode, rle_encode
+from minsu3d.evaluation.semantic_segmentation import *
+from tqdm import tqdm
 
 
 def save_prediction(save_path, all_pred_insts, mapping_ids, ignored_classes_indices):

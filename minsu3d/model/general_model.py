@@ -1,16 +1,18 @@
+import os
+
+import hydra
+import numpy as np
+import pytorch_lightning as pl
+import torch
+from minsu3d.common_ops.functions import common_ops
 from minsu3d.evaluation.instance_segmentation import GeneralDatasetEvaluator
 from minsu3d.evaluation.object_detection import evaluate_bbox_acc
-from minsu3d.util.lr_decay import cosine_lr_decay
-from minsu3d.common_ops.functions import common_ops
 from minsu3d.loss.pt_offset_loss import PTOffsetLoss
 from minsu3d.model.module import Backbone
 from minsu3d.util.io import save_prediction
-import pytorch_lightning as pl
+from minsu3d.util.lr_decay import cosine_lr_decay
+
 import MinkowskiEngine as ME
-import numpy as np
-import hydra
-import torch
-import os
 
 
 class GeneralModel(pl.LightningModule):
@@ -29,7 +31,8 @@ class GeneralModel(pl.LightningModule):
 
     def forward(self, data_dict):
         backbone_output_dict = self.backbone(
-            data_dict["voxel_features"], data_dict["voxel_xyz"], data_dict["voxel_point_map"]
+            data_dict["voxel_features"], data_dict["voxel_xyz"], data_dict["voxel_point_map"],
+            data_dict['point_xyz'] , data_dict['scan_ids']
         )
         return backbone_output_dict
 
@@ -185,7 +188,7 @@ def clusters_voxelization(clusters_idx, clusters_offset, feats, coords, scale, s
     batched_xyz = torch.cat((clusters_idx[:, 0].unsqueeze(-1), clusters_coords), dim=1)
 
     voxel_xyz, voxel_features, _, voxel_point_map = ME.utils.sparse_quantize(
-        batched_xyz, feats, return_index=True, return_inverse=True, device=device.type
+        batched_xyz.to(torch.float64), feats, return_index=True, return_inverse=True, device=device.type
     )
 
     clusters_voxel_feats = ME.SparseTensor(features=voxel_features, coordinates=voxel_xyz, device=device)
