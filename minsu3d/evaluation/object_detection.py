@@ -284,7 +284,7 @@ def evaluate_bbox_acc(all_preds, all_gts, class_names, ignored_classes_indicies,
     gt_all = {}
     for i in range(len(all_preds)):
         img_id = all_preds[i][0]["scan_id"]
-        pred_all[img_id] = [(pred["label_id"] - 1, pred["pred_bbox"], pred["conf"]) for pred in all_preds[i]]
+        pred_all[img_id] = [(int(pred["label_id"]) - 1, pred["pred_bbox"], pred["conf"]) for pred in all_preds[i]]
         gt_all[img_id] = all_gts[i]
     bbox_aps = {}
     for iou_threshold in iou_thresholds:
